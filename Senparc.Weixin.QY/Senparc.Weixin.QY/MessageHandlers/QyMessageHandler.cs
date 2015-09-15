@@ -1,4 +1,20 @@
-﻿using System;
+﻿/*----------------------------------------------------------------
+    Copyright (C) 2015 Senparc
+    
+    文件名：QyMessageHandler.cs
+    文件功能描述：企业号请求的集中处理方法
+    
+    
+    创建标识：Senparc - 20150313
+    
+    修改标识：Senparc - 20150313
+    修改描述：整理接口
+    
+    修改标识：Senparc - 20150507
+    修改描述：添加 事件 异步任务完成事件推送
+----------------------------------------------------------------*/
+
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -127,6 +143,7 @@ namespace Senparc.Weixin.QY.MessageHandlers
             }
         }
 
+      
 
         private PostModel _postModel;
 
@@ -222,6 +239,31 @@ namespace Senparc.Weixin.QY.MessageHandlers
 
                 switch (RequestMessage.MsgType)
                 {
+                    case RequestMsgType.DEFAULT://第三方回调
+                        {
+                            if (RequestMessage is IThirdPartyInfoBase)
+                            {
+                                var thirdPartyInfo = RequestMessage as IThirdPartyInfoBase;
+                                switch (thirdPartyInfo.InfoType)
+                                {
+                                    case ThirdPartyInfo.SUITE_TICKET:
+                                        break;
+                                    case ThirdPartyInfo.CHANGE_AUTH:
+                                        break;
+                                    case ThirdPartyInfo.CANCEL_AUTH:
+                                        break;
+                                    default:
+                                        throw new UnknownRequestMsgTypeException("未知的InfoType请求类型", null);
+                                }
+                                TextResponseMessage = "success";//设置文字类型返回
+                            }
+                            else
+                            {
+                                throw new WeixinException("没有找到合适的消息类型。");
+                            }
+                        }
+                        break;
+                    //以下是普通信息
                     case RequestMsgType.Text:
                         {
                             var requestMessage = RequestMessage as RequestMessageText;
@@ -239,6 +281,9 @@ namespace Senparc.Weixin.QY.MessageHandlers
                         break;
                     case RequestMsgType.Video:
                         ResponseMessage = OnVideoRequest(RequestMessage as RequestMessageVideo);
+                        break;
+                    case RequestMsgType.ShortVideo:
+                        ResponseMessage = OnShortVideoRequest(RequestMessage as RequestMessageShortVideo);
                         break;
                     case RequestMsgType.Event:
                         {
@@ -268,6 +313,20 @@ namespace Senparc.Weixin.QY.MessageHandlers
 
         public virtual void OnExecuting()
         {
+            //消息去重
+            if (OmitRepeatedMessage && CurrentMessageContext.RequestMessages.Count > 1)
+            {
+                var lastMessage = CurrentMessageContext.RequestMessages[CurrentMessageContext.RequestMessages.Count - 2];
+                if ((lastMessage.MsgId != 0 && lastMessage.MsgId == RequestMessage.MsgId)//使用MsgId去重
+                    ||
+                    ((lastMessage.CreateTime == RequestMessage.CreateTime) && lastMessage.MsgType != RequestMessage.MsgType)//使用CreateTime去重（OpenId对象已经是同一个）
+                    )
+                {
+                    CancelExcute = true;//重复消息，取消执行
+                    return;
+                }
+            }
+
             base.OnExecuting();
         }
 
@@ -337,6 +396,14 @@ namespace Senparc.Weixin.QY.MessageHandlers
             return DefaultResponseMessage(requestMessage);
         }
 
+        /// <summary>
+        /// 小视频类型请求
+        /// </summary>
+        public virtual IResponseMessageBase OnShortVideoRequest(RequestMessageShortVideo requestMessage)
+        {
+            return DefaultResponseMessage(requestMessage);
+        }
+
 
         /// <summary>
         /// Event事件类型请求
@@ -370,6 +437,21 @@ namespace Senparc.Weixin.QY.MessageHandlers
                     break;
                 case Event.PIC_SYSPHOTO://弹出系统拍照发图
                     responseMessage = OnEvent_PicSysphotoRequest(RequestMessage as RequestMessageEvent_Pic_Sysphoto);
+                    break;
+                case Event.subscribe://订阅
+                    responseMessage = OnEvent_SubscribeRequest(RequestMessage as RequestMessageEvent_Subscribe);
+                    break;
+                case Event.unsubscribe://取消订阅
+                    responseMessage = OnEvent_UnSubscribeRequest(RequestMessage as RequestMessageEvent_UnSubscribe);
+                    break;
+                case Event.LOCATION://上报地理位置事件
+                    responseMessage = OnEvent_LocationRequest(RequestMessage as RequestMessageEvent_Location);
+                    break;
+                case Event.ENTER_AGENT://用户进入应用的事件推送(enter_agent)
+                    responseMessage = OnEvent_EnterAgentRequest(RequestMessage as RequestMessageEvent_Enter_Agent);
+                    break;
+                case Event.BATCH_JOB_RESULT://异步任务完成事件推送(batch_job_result)
+                    responseMessage = OnEvent_BatchJobResultRequest(RequestMessage as RequestMessageEvent_Batch_Job_Result);
                     break;
                 default:
                     throw new UnknownRequestMsgTypeException("未知的Event下属请求信息", null);
@@ -447,6 +529,52 @@ namespace Senparc.Weixin.QY.MessageHandlers
         /// </summary>
         /// <returns></returns>
         public virtual IResponseMessageBase OnEvent_PicSysphotoRequest(RequestMessageEvent_Pic_Sysphoto requestMessage)
+        {
+            return DefaultResponseMessage(requestMessage);
+        }
+
+        /// <summary>
+        /// 订阅
+        /// </summary>
+        /// <returns></returns>
+        public virtual IResponseMessageBase OnEvent_SubscribeRequest(RequestMessageEvent_Subscribe requestMessage)
+        {
+            return DefaultResponseMessage(requestMessage);
+        }
+
+        /// <summary>
+        /// 取消订阅
+        /// </summary>
+        /// <returns></returns>
+        public virtual IResponseMessageBase OnEvent_UnSubscribeRequest(RequestMessageEvent_UnSubscribe requestMessage)
+        {
+            return DefaultResponseMessage(requestMessage);
+        }
+
+        /// <summary>
+        /// 上报地理位置事件
+        /// </summary>
+        /// <returns></returns>
+        public virtual IResponseMessageBase OnEvent_LocationRequest(RequestMessageEvent_Location requestMessage)
+        {
+            return DefaultResponseMessage(requestMessage);
+        }
+
+        /// <summary>
+        /// 用户进入应用的事件推送(enter_agent)
+        /// </summary>
+        /// <returns></returns>
+        public virtual IResponseMessageBase OnEvent_EnterAgentRequest(RequestMessageEvent_Enter_Agent requestMessage)
+        {
+            return DefaultResponseMessage(requestMessage);
+        }
+
+        /// <summary>
+        /// 异步任务完成事件推送(batch_job_result)
+        /// </summary>
+        /// <param name="requestMessage"></param>
+        /// <returns></returns>
+        public virtual IResponseMessageBase OnEvent_BatchJobResultRequest(RequestMessageEvent_Batch_Job_Result requestMessage)
         {
             return DefaultResponseMessage(requestMessage);
         }

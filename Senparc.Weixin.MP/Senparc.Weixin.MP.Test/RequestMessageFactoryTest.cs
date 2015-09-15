@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.Xml.Linq;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Senparc.Weixin.Helpers;
@@ -63,6 +64,16 @@ namespace Senparc.Weixin.MP.Test
   <MsgType><![CDATA[video]]></MsgType>
   <MediaId><![CDATA[mediaId]]></MediaId>
   <ThumbMediaId><![CDATA[thumbMediaId]]></ThumbMediaId>
+</xml>";
+
+        private string xmlShortVideo = @"<xml>
+<ToUserName><![CDATA[toUser]]></ToUserName>
+<FromUserName><![CDATA[fromUser]]></FromUserName>
+<CreateTime>1357290913</CreateTime>
+<MsgType><![CDATA[shortvideo]]></MsgType>
+<MediaId><![CDATA[media_id]]></MediaId>
+<ThumbMediaId><![CDATA[thumb_media_id]]></ThumbMediaId>
+<MsgId>1234567890123456</MsgId>
 </xml>";
 
 //        @"<?xml version=""1.0"" encoding=""utf-8""?>
@@ -294,6 +305,138 @@ namespace Senparc.Weixin.MP.Test
 <UserCardCode><![CDATA[12312312]]></UserCardCode>
 </xml>";
 
+        private string xmlEvent_Kf_Create_Session = @"<xml>
+ <ToUserName><![CDATA[touser]]></ToUserName>
+ <FromUserName><![CDATA[fromuser]]></FromUserName>
+ <CreateTime>1399197672</CreateTime>
+ <MsgType><![CDATA[event]]></MsgType>
+ <Event><![CDATA[kf_create_session]]></Event>
+ <KfAccount><![CDATA[test1@test]]></KfAccount>
+ </xml>";
+
+        private string xmlEvent_Kf_Close_Session = @"<xml>
+ <ToUserName><![CDATA[touser]]></ToUserName>
+ <FromUserName><![CDATA[fromuser]]></FromUserName>
+ <CreateTime>1399197672</CreateTime>
+ <MsgType><![CDATA[event]]></MsgType>
+ <Event><![CDATA[kf_close_session]]></Event>
+ <KfAccount><![CDATA[test1@test]]></KfAccount>
+ </xml>";
+
+        private string xmlEvent_Kf_Switch_Session = @"<xml>
+ <ToUserName><![CDATA[touser]]></ToUserName>
+ <FromUserName><![CDATA[fromuser]]></FromUserName>
+ <CreateTime>1399197672</CreateTime>
+ <MsgType><![CDATA[event]]></MsgType>
+ <Event><![CDATA[kf_switch_session]]></Event>
+ <FromKfAccount><![CDATA[test1@test]]></FromKfAccount>
+ <ToKfAccount><![CDATA[test2@test]]></ToKfAccount>
+ </xml>";
+
+        private string xmlEvent_Poi_Check_Notify = @"<xml>
+<ToUserName><![CDATA[toUser]]></ToUserName>
+<FromUserName><![CDATA[fromUser]]></FromUserName>
+<CreateTime>1408622107</CreateTime>
+<MsgType><![CDATA[event]]></MsgType>
+<Event><![CDATA[poi_check_notify]]></Event>
+<UniqId><![CDATA[123adb]]></UniqId>
+<PoiId><![CDATA[123123]]></PoiId>
+<Result><![CDATA[fail]]></Result>
+<Msg><![CDATA[xxxxxx]]></Msg>
+</xml>";
+
+        private string xmlEvent_WifiConnected = @"<xml> 
+<ToUserName><![CDATA[toUser]]></ToUserName> 
+<FromUserName><![CDATA[FromUser]]></FromUserName> 
+<CreateTime>123456789</CreateTime> 
+<MsgType><![CDATA[event]]></MsgType> 
+<Event><![CDATA[WifiConnected]]></Event>
+<ConnectTime>0</ConnectTime>
+<ExpireTime>0</ExpireTime>
+<VendorId><![CDATA[3001224419]]></VendorId>
+<PlaceId><![CDATA[PlaceId]]></PlaceId>
+<DeviceNo><![CDATA[DeviceNo]]></DeviceNo>
+</xml>";
+
+        private string xmlEvent_User_Consume_Card = @"<xml> <ToUserName><![CDATA[toUser]]></ToUserName> 
+<FromUserName><![CDATA[FromUser]]></FromUserName> 
+<CreateTime>123456789</CreateTime> 
+<MsgType><![CDATA[event]]></MsgType> 
+<Event><![CDATA[user_consume_card]]></Event> 
+<CardId><![CDATA[cardid]]></CardId> 
+<UserCardCode><![CDATA[12312312]]></UserCardCode>
+<ConsumeSource><![CDATA[(FROM_API)]]></ConsumeSource>
+</xml>";
+
+        private string xmlEvent_User_Enter_Session_From_Card = @"<xml> <ToUserName><![CDATA[toUser]]></ToUserName> 
+<FromUserName><![CDATA[FromUser]]></FromUserName> 
+<CreateTime>123456789</CreateTime> 
+<MsgType><![CDATA[event]]></MsgType> 
+<Event><![CDATA[user_enter_session_from_card]]></Event> 
+<CardId><![CDATA[cardid]]></CardId> 
+<UserCardCode><![CDATA[12312312]]></UserCardCode>
+</xml>";
+
+        private string xmlEvent_User_View_Card = @"<xml> <ToUserName><![CDATA[toUser]]></ToUserName> 
+<FromUserName><![CDATA[FromUser]]></FromUserName> 
+<CreateTime>123456789</CreateTime> 
+<MsgType><![CDATA[event]]></MsgType> 
+<Event><![CDATA[user_view_card]]></Event> 
+<CardId><![CDATA[cardid]]></CardId> 
+<UserCardCode><![CDATA[12312312]]></UserCardCode>
+</xml>";
+
+        private string xmlEvent_Merchant_Order = @"<xml>
+<ToUserName><![CDATA[weixin_media1]]></ToUserName>
+<FromUserName><![CDATA[oDF3iYyVlek46AyTBbMRVV8VZVlI]]></FromUserName>
+<CreateTime>1398144192</CreateTime>
+<MsgType><![CDATA[event]]></MsgType>
+<Event><![CDATA[merchant_order]]></Event>
+<OrderId><![CDATA[test_order_id]]></OrderId>
+<OrderStatus>2</OrderStatus>
+<ProductId><![CDATA[test_product_id]]></ProductId>
+<SkuInfo><![CDATA[10001:1000012;10002:100021]]></SkuInfo>
+</xml>
+";
+
+        private string xmlEvent_Submit_Membercard_User_Info = @"<xml>
+  <ToUserName> <![CDATA[gh_3fcea188bf78]]></ToUserName>
+  <FromUserName><![CDATA[obLatjlaNQKb8FqOvt1M1x1lIBFE]]></FromUserName>
+  <CreateTime>1432668700</CreateTime>
+  <MsgType><![CDATA[event]]></MsgType>
+  <Event><![CDATA[submit_membercard_user_info]]></Event>
+  <CardId><![CDATA[pbLatjtZ7v1BG_ZnTjbW85GYc_E8]]></CardId>
+  <UserCardCode><![CDATA[018255396048]]></UserCardCode>
+  </xml>";
+
+        private string xmlEvent_ShakearoundUserShake = @"<xml>
+<ToUserName><![CDATA[toUser]]></ToUserName>
+<FromUserName><![CDATA[fromUser]]></FromUserName>
+<CreateTime>1433332012</CreateTime>
+    <MsgType><![CDATA[event]]></MsgType>
+    <Event><![CDATA[ShakearoundUserShake]]></Event>
+    <ChosenBeacon>
+        <Uuid><![CDATA[uuid]]></Uuid>
+        <Major>12345</Major>
+        <Minor>54321</Minor>
+        <Distance>0.057</Distance>
+    </ChosenBeacon>
+    <AroundBeacons>
+        <AroundBeacon>
+            <Uuid><![CDATA[uuid]]></Uuid>
+            <Major>12345</Major>
+            <Minor>54321</Minor>
+            <Distance>166.816</Distance>
+        </AroundBeacon>
+        <AroundBeacon>
+            <Uuid><![CDATA[uuid]]></Uuid>
+            <Major>12345</Major>
+            <Minor>54321</Minor>
+            <Distance>15.013</Distance>
+        </AroundBeacon>
+    </AroundBeacons>
+</xml>";
+
         [TestMethod]
         public void GetRequestEntityTest()
         {
@@ -343,6 +486,16 @@ namespace Senparc.Weixin.MP.Test
                 Assert.AreEqual("gh_a96a4a619366", result.ToUserName);
                 Assert.AreEqual("mediaId", result.MediaId);
                 Assert.AreEqual("thumbMediaId", result.ThumbMediaId);
+            }
+
+            {
+                //ShortVideo
+                var doc = XDocument.Parse(xmlShortVideo);
+                var result = RequestMessageFactory.GetRequestEntity(doc) as RequestMessageShortVideo;
+                Assert.IsNotNull(result);
+                Assert.AreEqual("toUser", result.ToUserName);
+                Assert.AreEqual("media_id", result.MediaId);
+                Assert.AreEqual("thumb_media_id", result.ThumbMediaId);
             }
 
             {
@@ -499,6 +652,8 @@ namespace Senparc.Weixin.MP.Test
                 Assert.IsNotNull(result);
                 Assert.AreEqual("gh_a96a4a619366", result.ToUserName);
                 Assert.AreEqual(Event.MASSSENDJOBFINISH, result.Event);
+                Assert.AreEqual(result.SentCount, 75);
+                Assert.AreEqual(result.ErrorCount, 5);
                 Assert.IsNotNull(result.MsgID);
                 Assert.AreEqual(1988, result.MsgID);
             }
@@ -545,6 +700,122 @@ namespace Senparc.Weixin.MP.Test
                 Assert.AreEqual(Event.user_del_card, result.Event);
                 Assert.IsNotNull(result.CardId);
                 Assert.AreEqual("12312312", result.UserCardCode);
+            }
+
+            {
+                //Event-Kf_Create_Session
+                var doc = XDocument.Parse(xmlEvent_Kf_Create_Session);
+                var result = RequestMessageFactory.GetRequestEntity(doc) as RequestMessageEvent_Kf_Create_Session;
+                Assert.IsNotNull(result);
+                Assert.AreEqual("touser", result.ToUserName);
+                Assert.AreEqual(Event.kf_create_session, result.Event);
+                Assert.AreEqual("test1@test", result.KfAccount);
+            }
+
+            {
+                //Event-Kf_Close_Session
+                var doc = XDocument.Parse(xmlEvent_Kf_Close_Session);
+                var result = RequestMessageFactory.GetRequestEntity(doc) as RequestMessageEvent_Kf_Close_Session;
+                Assert.IsNotNull(result);
+                Assert.AreEqual("touser", result.ToUserName);
+                Assert.AreEqual(Event.kf_close_session, result.Event);
+                Assert.AreEqual("test1@test", result.KfAccount);
+            }
+
+            {
+                //Event-Kf_Switch_Session
+                var doc = XDocument.Parse(xmlEvent_Kf_Switch_Session);
+                var result = RequestMessageFactory.GetRequestEntity(doc) as RequestMessageEvent_Kf_Switch_Session;
+                Assert.IsNotNull(result);
+                Assert.AreEqual("touser", result.ToUserName);
+                Assert.AreEqual(Event.kf_switch_session, result.Event);
+                Assert.AreEqual("test1@test", result.FromKfAccount);
+                Assert.AreEqual("test2@test", result.ToKfAccount);
+            }
+
+            {
+                //Event-Poi_Check_Notify
+                var doc = XDocument.Parse(xmlEvent_Poi_Check_Notify);
+                var result = RequestMessageFactory.GetRequestEntity(doc) as RequestMessageEvent_Poi_Check_Notify;
+                Assert.IsNotNull(result);
+                Assert.AreEqual("toUser", result.ToUserName);
+                Assert.AreEqual(Event.poi_check_notify, result.Event);
+                Assert.AreEqual("123adb", result.UniqId);
+                Assert.AreEqual("fail", result.Result);
+            }
+
+            {
+                //Event-WifiConnected
+                var doc = XDocument.Parse(xmlEvent_WifiConnected);
+                var result = RequestMessageFactory.GetRequestEntity(doc) as RequestMessageEvent_WifiConnected;
+                Assert.IsNotNull(result);
+                Assert.AreEqual("toUser", result.ToUserName);
+                Assert.AreEqual(Event.WifiConnected, result.Event);
+                Assert.AreEqual("PlaceId", result.PlaceId);
+                Assert.AreEqual("3001224419", result.VendorId);
+            }
+
+            {
+                //Event-User_Consume_Card
+                var doc = XDocument.Parse(xmlEvent_User_Consume_Card);
+                var result = RequestMessageFactory.GetRequestEntity(doc) as RequestMessageEvent_User_Consume_Card;
+                Assert.IsNotNull(result);
+                Assert.AreEqual("toUser", result.ToUserName);
+                Assert.AreEqual(Event.user_consume_card, result.Event);
+                Assert.AreEqual("cardid", result.CardId);
+            }
+
+            {
+                //Event-User_Enter_Session_From_Card
+                var doc = XDocument.Parse(xmlEvent_User_Enter_Session_From_Card);
+                var result = RequestMessageFactory.GetRequestEntity(doc) as RequestMessageEvent_User_Enter_Session_From_Card;
+                Assert.IsNotNull(result);
+                Assert.AreEqual("toUser", result.ToUserName);
+                Assert.AreEqual(Event.user_enter_session_from_card, result.Event);
+                Assert.AreEqual("cardid", result.CardId);
+            }
+
+            {
+                //Event-User_View_Card
+                var doc = XDocument.Parse(xmlEvent_User_View_Card);
+                var result = RequestMessageFactory.GetRequestEntity(doc) as RequestMessageEvent_User_View_Card;
+                Assert.IsNotNull(result);
+                Assert.AreEqual("toUser", result.ToUserName);
+                Assert.AreEqual(Event.user_view_card, result.Event);
+                Assert.AreEqual("cardid", result.CardId);
+            }
+
+            {
+                //Event-Merchant_Order
+                var doc = XDocument.Parse(xmlEvent_Merchant_Order);
+                var result = RequestMessageFactory.GetRequestEntity(doc) as RequestMessageEvent_Merchant_Order;
+                Assert.IsNotNull(result);
+                Assert.AreEqual("weixin_media1", result.ToUserName);
+                Assert.AreEqual(Event.merchant_order, result.Event);
+                Assert.AreEqual("test_product_id", result.ProductId);
+            }
+
+            {
+                //Event-Submit_Membercard_User_Info
+                var doc = XDocument.Parse(xmlEvent_Submit_Membercard_User_Info);
+                var result = RequestMessageFactory.GetRequestEntity(doc) as RequestMessageEvent_Submit_Membercard_User_Info;
+                Assert.IsNotNull(result);
+                Assert.AreEqual("gh_3fcea188bf78", result.ToUserName);
+                Assert.AreEqual(Event.submit_membercard_user_info, result.Event);
+                Assert.AreEqual("pbLatjtZ7v1BG_ZnTjbW85GYc_E8", result.CardId);
+            }
+
+            {
+                //Event-ShakearoundUserShake
+                var doc = XDocument.Parse(xmlEvent_ShakearoundUserShake);
+                var result = RequestMessageFactory.GetRequestEntity(doc) as RequestMessageEvent_ShakearoundUserShake;
+                Assert.IsNotNull(result);
+                Assert.AreEqual("toUser", result.ToUserName);
+                Assert.AreEqual(Event.ShakearoundUserShake, result.Event);
+                Assert.AreEqual(12345, result.ChosenBeacon.Major);
+                Assert.AreEqual(54321, result.ChosenBeacon.Minor);
+                Assert.AreEqual(2, result.AroundBeacons.Count);
+                Assert.AreEqual(15.013, result.AroundBeacons.ElementAt(1).Distance);
             }
         }
     }

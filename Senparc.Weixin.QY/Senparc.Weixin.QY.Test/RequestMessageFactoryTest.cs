@@ -95,6 +95,17 @@ namespace Senparc.Weixin.QY.Test
    <AgentID>1</AgentID>
 </xml>";
 
+        private string xmlEvent_ShortVideo = @"<xml>
+   <ToUserName><![CDATA[toUser]]></ToUserName>
+   <FromUserName><![CDATA[fromUser]]></FromUserName>
+   <CreateTime>1357290913</CreateTime>
+   <MsgType><![CDATA[shortvideo]]></MsgType>
+   <MediaId><![CDATA[media_id]]></MediaId>
+   <ThumbMediaId><![CDATA[thumb_media_id]]></ThumbMediaId>
+   <MsgId>1234567890123456</MsgId>
+   <AgentID>1</AgentID>
+</xml>";
+
         private string xmlEvent_Click = @"<xml>
 <ToUserName><![CDATA[toUser]]></ToUserName>
 <FromUserName><![CDATA[FromUser]]></FromUserName>
@@ -205,6 +216,39 @@ namespace Senparc.Weixin.QY.Test
 <AgentID>1</AgentID>
 </xml>";
 
+        private string xml_Suite_Ticket = @"<xml>
+		<SuiteId><![CDATA[wxfc918a2d200c9a4c]]></SuiteId>
+		<InfoType> <![CDATA[suite_ticket]]></InfoType>
+		<TimeStamp>1403610513</TimeStamp>
+		<SuiteTicket><![CDATA[asdfasfdasdfasdf]]></SuiteTicket>
+	</xml>";
+
+        private string xml_Change_Auth = @"<xml>
+		<SuiteId><![CDATA[wxfc918a2d200c9a4c]]></SuiteId>
+		<InfoType><![CDATA[change_auth]]></InfoType>
+		<TimeStamp>1403610513</TimeStamp> 
+		<AuthCorpId><![CDATA[wxf8b4f85f3a794e77]]></AuthCorpId>
+	</xml>	";
+
+        private string xml_Cancel_Auth = @"<xml>
+		<SuiteId><![CDATA[wxfc918a2d200c9a4c]]></SuiteId>
+		<InfoType><![CDATA[cancel_auth]]></InfoType>
+		<TimeStamp>1403610513</TimeStamp>
+		<AuthCorpId><![CDATA[wxf8b4f85f3a794e77]]></AuthCorpId>
+	</xml>	";
+
+        private string xml_Batch_Job_Result = @"<xml><ToUserName><![CDATA[wx28dbb14e37208abe]]></ToUserName>
+<FromUserName><![CDATA[FromUser]]></FromUserName>
+<CreateTime>1425284517</CreateTime>
+<MsgType><![CDATA[event]]></MsgType>
+<Event><![CDATA[batch_job_result]]></Event>
+<BatchJob><JobId><![CDATA[S0MrnndvRG5fadSlLwiBqiDDbM143UqTmKP3152FZk4]]></JobId>
+<JobType><![CDATA[sync_user]]></JobType>
+<ErrCode>0</ErrCode>
+<ErrMsg><![CDATA[ok]]></ErrMsg>
+</BatchJob>
+</xml>";
+
         [TestMethod]
         public void GetRequestEntityTest()
         {
@@ -258,6 +302,16 @@ namespace Senparc.Weixin.QY.Test
                 Assert.AreEqual(1, result.AgentID);
             }
 
+            {
+                //ShortVideo
+                var doc = XDocument.Parse(xmlEvent_ShortVideo);
+                var result = RequestMessageFactory.GetRequestEntity(doc) as RequestMessageShortVideo;
+                Assert.IsNotNull(result);
+                Assert.AreEqual("toUser", result.ToUserName);
+                Assert.AreEqual("media_id", result.MediaId);
+                Assert.AreEqual(1, result.AgentID);
+            }
+            
             {
                 //Event_Location
                 var doc = XDocument.Parse(xmlEvent_Location);
@@ -355,6 +409,43 @@ namespace Senparc.Weixin.QY.Test
                 Assert.IsNotNull(result);
                 Assert.AreEqual("toUser", result.ToUserName);
                 Assert.AreEqual(1, result.AgentID);
+            }
+
+            {
+                //Suite_Ticket
+                var doc = XDocument.Parse(xml_Suite_Ticket);
+                var result = RequestMessageFactory.GetRequestEntity(doc) as RequestMessageInfo_Suite_Ticket;
+                Assert.IsNotNull(result);
+                Assert.AreEqual("wxfc918a2d200c9a4c", result.SuiteId);
+                Assert.AreEqual("asdfasfdasdfasdf", result.SuiteTicket);
+            }
+
+            {
+                //Change_Auth
+                var doc = XDocument.Parse(xml_Change_Auth);
+                var result = RequestMessageFactory.GetRequestEntity(doc) as RequestMessageInfo_Change_Auth;
+                Assert.IsNotNull(result);
+                Assert.AreEqual("wxfc918a2d200c9a4c", result.SuiteId);
+                Assert.AreEqual("wxf8b4f85f3a794e77", result.AuthCorpId);
+            }
+
+            {
+                //Cancel_Auth
+                var doc = XDocument.Parse(xml_Cancel_Auth);
+                var result = RequestMessageFactory.GetRequestEntity(doc) as RequestMessageInfo_Cancel_Auth;
+                Assert.IsNotNull(result);
+                Assert.AreEqual("wxfc918a2d200c9a4c", result.SuiteId);
+                Assert.AreEqual("wxf8b4f85f3a794e77", result.AuthCorpId);
+            }
+
+            {
+                //Batch_Job_Result
+                var doc = XDocument.Parse(xml_Batch_Job_Result);
+                var result = RequestMessageFactory.GetRequestEntity(doc) as RequestMessageEvent_Batch_Job_Result;
+                Assert.IsNotNull(result);
+                Assert.AreEqual("wx28dbb14e37208abe", result.ToUserName);
+                Assert.AreEqual("ok", result.BatchJob.ErrMsg);
+                Assert.AreEqual(0, result.BatchJob.ErrCode);
             }
         }
     }

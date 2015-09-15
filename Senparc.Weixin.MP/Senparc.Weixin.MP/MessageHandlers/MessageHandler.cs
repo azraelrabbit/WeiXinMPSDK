@@ -1,6 +1,19 @@
-﻿/*
- * V3.1
- */
+﻿/*----------------------------------------------------------------
+    Copyright (C) 2015 Senparc
+    
+    文件名：MessageHandler.cs
+    文件功能描述：微信请求的集中处理方法
+    
+    
+    创建标识：Senparc - 20150211
+    
+    修改标识：Senparc - 20150303
+    修改描述：整理接口
+    
+    修改标识：Senparc - 20150327
+    修改描述：添加接收小视频消息方法
+----------------------------------------------------------------*/
+
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -9,6 +22,8 @@ using System.Text;
 using System.Xml;
 using System.Xml.Linq;
 using Senparc.Weixin.Context;
+using Senparc.Weixin.MP.Agent;
+using Senparc.Weixin.MP.AppStore;
 using Senparc.Weixin.MP.Entities;
 using Senparc.Weixin.Exceptions;
 using Senparc.Weixin.MP.Entities.Request;
@@ -94,7 +109,7 @@ namespace Senparc.Weixin.MP.MessageHandlers
 
                 WXBizMsgCrypt msgCrype = new WXBizMsgCrypt(_postModel.Token, _postModel.EncodingAESKey, _postModel.AppId);
                 string finalResponseXml = null;
-                msgCrype.EncryptMsg(ResponseDocument.ToString(), timeStamp, nonce, ref finalResponseXml);//TODO:这里官方的方法已经把EncryptResponseMessage对应的XML输出出来了
+                msgCrype.EncryptMsg(ResponseDocument.ToString().Replace("\r\n","\n")/* 替换\r\n是为了处理iphone设备上换行bug */, timeStamp, nonce, ref finalResponseXml);//TODO:这里官方的方法已经把EncryptResponseMessage对应的XML输出出来了
 
                 return XDocument.Parse(finalResponseXml);
             }
@@ -145,18 +160,55 @@ namespace Senparc.Weixin.MP.MessageHandlers
         /// </summary>
         public bool UsingCompatibilityModelEcryptMessage { get; set; }
 
-        public MessageHandler(Stream inputStream, PostModel postModel = null, int maxRecordCount = 0)
+        /// <summary>
+        /// 微微嗨开发者信息
+        /// </summary>
+        public DeveloperInfo DeveloperInfo { get; set; }
+
+        /// <summary>
+        /// 构造MessageHandler
+        /// </summary>
+        /// <param name="inputStream">请求消息流</param>
+        /// <param name="postModel">PostModel</param>
+        /// <param name="maxRecordCount">单个用户上下文消息列表储存的最大长度</param>
+        /// <param name="developerInfo">微微嗨开发者信息，如果不为空，则优先请求云端应用商店的资源</param>
+        public MessageHandler(Stream inputStream, PostModel postModel = null, int maxRecordCount = 0, DeveloperInfo developerInfo = null)
             : base(inputStream, maxRecordCount, postModel)
         {
-
+            DeveloperInfo = developerInfo;
         }
 
-        public MessageHandler(XDocument requestDocument, PostModel postModel = null, int maxRecordCount = 0)
+        /// <summary>
+        /// 构造MessageHandler
+        /// </summary>
+        /// <param name="requestDocument">请求消息的XML</param>
+        /// <param name="postModel">PostModel</param>
+        /// <param name="maxRecordCount">单个用户上下文消息列表储存的最大长度</param>
+        /// <param name="developerInfo">微微嗨开发者信息，如果不为空，则优先请求云端应用商店的资源</param>
+        public MessageHandler(XDocument requestDocument, PostModel postModel = null, int maxRecordCount = 0, DeveloperInfo developerInfo = null)
             : base(requestDocument, maxRecordCount, postModel)
         {
+            DeveloperInfo = developerInfo;
             //WeixinContext.MaxRecordCount = maxRecordCount;
             //Init(requestDocument);
         }
+
+        /// <summary>
+        /// 直接传入IRequestMessageBase，For UnitTest
+        /// </summary>
+        /// <param name="postModel">PostModel</param>
+        /// <param name="maxRecordCount">单个用户上下文消息列表储存的最大长度</param>
+        /// <param name="developerInfo">微微嗨开发者信息，如果不为空，则优先请求云端应用商店的资源</param>
+        /// <param name="requestMessageBase"></param>
+        public MessageHandler(RequestMessageBase requestMessageBase, PostModel postModel = null, int maxRecordCount = 0, DeveloperInfo developerInfo = null)
+            : base(requestMessageBase, maxRecordCount, postModel)
+        {
+            DeveloperInfo = developerInfo;
+
+            var postDataDocument = requestMessageBase.ConvertEntityToXml();
+            base.CommonInitialize(postDataDocument,maxRecordCount,postModel);
+        }
+
 
         public override XDocument Init(XDocument postDataDocument, object postData = null)
         {
@@ -271,6 +323,9 @@ namespace Senparc.Weixin.MP.MessageHandlers
                     case RequestMsgType.Link:
                         ResponseMessage = OnLinkRequest(RequestMessage as RequestMessageLink);
                         break;
+                    case RequestMsgType.ShortVideo:
+                        ResponseMessage = OnShortVideoRequest(RequestMessage as RequestMessageShortVideo);
+                        break;
                     case RequestMsgType.Event:
                         {
                             var requestMessageText = (RequestMessage as IRequestMessageEventBase).ConvertToRequestMessageText();
@@ -299,7 +354,28 @@ namespace Senparc.Weixin.MP.MessageHandlers
 
         public virtual void OnExecuting()
         {
+            //消息去重
+            if (OmitRepeatedMessage && CurrentMessageContext.RequestMessages.Count > 1)
+            {
+                var lastMessage = CurrentMessageContext.RequestMessages[CurrentMessageContext.RequestMessages.Count - 2];
+                if ((lastMessage.MsgId != 0 && lastMessage.MsgId == RequestMessage.MsgId)//使用MsgId去重
+                    ||
+                    ((lastMessage.CreateTime == RequestMessage.CreateTime && lastMessage.MsgType == RequestMessage.MsgType))//使用CreateTime去重（OpenId对象已经是同一个）
+                    )
+                {
+                    CancelExcute = true;//重复消息，取消执行
+                    return;
+                }
+            }
+
             base.OnExecuting();
+
+            //判断是否已经接入开发者信息
+            if (DeveloperInfo != null || CurrentMessageContext.AppStoreState == AppStoreState.Enter)
+            {
+                //优先请求云端应用商店资源
+
+            }
         }
 
         public virtual void OnExecuted()
@@ -385,6 +461,14 @@ namespace Senparc.Weixin.MP.MessageHandlers
         }
 
         /// <summary>
+        /// 小视频类型请求
+        /// </summary>
+        public virtual IResponseMessageBase OnShortVideoRequest(RequestMessageShortVideo requestMessage)
+        {
+            return DefaultResponseMessage(requestMessage);
+        }
+
+        /// <summary>
         /// Event事件类型请求
         /// </summary>
         public virtual IResponseMessageBase OnEventRequest(IRequestMessageEventBase requestMessage)
@@ -437,6 +521,51 @@ namespace Senparc.Weixin.MP.MessageHandlers
                     break;
                 case Event.pic_sysphoto://弹出系统拍照发图
                     responseMessage = OnEvent_PicSysphotoRequest(RequestMessage as RequestMessageEvent_Pic_Sysphoto);
+                    break;
+                case Event.card_pass_check://卡券通过审核
+                    responseMessage = OnEvent_Card_Pass_CheckRequest(RequestMessage as RequestMessageEvent_Card_Pass_Check);
+                    break;
+                case Event.card_not_pass_check://卡券未通过审核
+                    responseMessage = OnEvent_Card_Not_Pass_CheckRequest(RequestMessage as RequestMessageEvent_Card_Not_Pass_Check);
+                    break;
+                case Event.user_get_card://领取卡券
+                    responseMessage = OnEvent_User_Get_CardRequest(RequestMessage as RequestMessageEvent_User_Get_Card);
+                    break;
+                case Event.user_del_card://删除卡券
+                    responseMessage = OnEvent_User_Del_CardRequest(RequestMessage as RequestMessageEvent_User_Del_Card);
+                    break;
+                case Event.kf_create_session://多客服接入会话
+                    responseMessage = OnEvent_Kf_Create_SessionRequest(RequestMessage as RequestMessageEvent_Kf_Create_Session);
+                    break;
+                case Event.kf_close_session://多客服关闭会话
+                    responseMessage = OnEvent_Kf_Close_SessionRequest(RequestMessage as RequestMessageEvent_Kf_Close_Session);
+                    break;
+                case Event.kf_switch_session://多客服转接会话
+                    responseMessage = OnEvent_Kf_Switch_SessionRequest(RequestMessage as RequestMessageEvent_Kf_Switch_Session);
+                    break;
+                case Event.poi_check_notify://审核结果事件推送
+                    responseMessage = OnEvent_Poi_Check_NotifyRequest(RequestMessage as RequestMessageEvent_Poi_Check_Notify);
+                    break;
+                case Event.WifiConnected://Wi-Fi连网成功
+                    responseMessage = OnEvent_WifiConnected(RequestMessage as RequestMessageEvent_WifiConnected);
+                    break;
+                case Event.user_consume_card://卡券核销
+                    responseMessage = OnEvent_User_Consume_Card(RequestMessage as RequestMessageEvent_User_Consume_Card);
+                    break;
+                case Event.user_enter_session_from_card://从卡券进入公众号会话
+                    responseMessage = OnEvent_User_Enter_Session_From_Card(RequestMessage as RequestMessageEvent_User_Enter_Session_From_Card);
+                    break;
+                case Event.user_view_card://进入会员卡
+                    responseMessage = OnEvent_User_View_Card(RequestMessage as RequestMessageEvent_User_View_Card);
+                    break;
+                case Event.merchant_order://微小店订单付款通知
+                    responseMessage = OnEvent_Merchant_Order(RequestMessage as RequestMessageEvent_Merchant_Order);
+                    break;
+                case Event.submit_membercard_user_info://接收会员信息事件通知
+                    responseMessage = OnEvent_Submit_Membercard_User_Info(RequestMessage as RequestMessageEvent_Submit_Membercard_User_Info);
+                    break;
+                case Event.ShakearoundUserShake://摇一摇事件通知
+                    responseMessage = OnEvent_ShakearoundUserShake(RequestMessage as RequestMessageEvent_ShakearoundUserShake);
                     break;
                 default:
                     throw new UnknownRequestMsgTypeException("未知的Event下属请求信息", null);
@@ -575,6 +704,134 @@ namespace Senparc.Weixin.MP.MessageHandlers
         {
             return DefaultResponseMessage(requestMessage);
         }
+
+        /// <summary>
+        /// 卡券通过审核
+        /// </summary>
+        /// <returns></returns>
+        public virtual IResponseMessageBase OnEvent_Card_Pass_CheckRequest(RequestMessageEvent_Card_Pass_Check requestMessage)
+        {
+            return DefaultResponseMessage(requestMessage);
+        }
+
+        /// <summary>
+        /// 卡券未通过审核
+        /// </summary>
+        /// <returns></returns>
+        public virtual IResponseMessageBase OnEvent_Card_Not_Pass_CheckRequest(RequestMessageEvent_Card_Not_Pass_Check requestMessage)
+        {
+            return DefaultResponseMessage(requestMessage);
+        }
+
+        /// <summary>
+        /// 领取卡券
+        /// </summary>
+        /// <returns></returns>
+        public virtual IResponseMessageBase OnEvent_User_Get_CardRequest(RequestMessageEvent_User_Get_Card requestMessage)
+        {
+            return DefaultResponseMessage(requestMessage);
+        }
+
+        /// <summary>
+        /// 删除卡券
+        /// </summary>
+        /// <returns></returns>
+        public virtual IResponseMessageBase OnEvent_User_Del_CardRequest(RequestMessageEvent_User_Del_Card requestMessage)
+        {
+            return DefaultResponseMessage(requestMessage);
+        }
+
+        /// <summary>
+        /// 多客服接入会话
+        /// </summary>
+        /// <returns></returns>
+        public virtual IResponseMessageBase OnEvent_Kf_Create_SessionRequest(RequestMessageEvent_Kf_Create_Session requestMessage)
+        {
+            return DefaultResponseMessage(requestMessage);
+        }
+
+        /// <summary>
+        /// 多客服关闭会话
+        /// </summary>
+        /// <returns></returns>
+        public virtual IResponseMessageBase OnEvent_Kf_Close_SessionRequest(RequestMessageEvent_Kf_Close_Session requestMessage)
+        {
+            return DefaultResponseMessage(requestMessage);
+        }
+
+        /// <summary>
+        /// 多客服转接会话
+        /// </summary>
+        /// <returns></returns>
+        public virtual IResponseMessageBase OnEvent_Kf_Switch_SessionRequest(RequestMessageEvent_Kf_Switch_Session requestMessage)
+        {
+            return DefaultResponseMessage(requestMessage);
+        }
+
+        /// <summary>
+        /// Event事件类型请求之审核结果事件推送
+        /// </summary>
+        public virtual IResponseMessageBase OnEvent_Poi_Check_NotifyRequest(RequestMessageEvent_Poi_Check_Notify requestMessage)
+        {
+            return DefaultResponseMessage(requestMessage);
+        }
+
+        /// <summary>
+        /// Event事件类型请求之Wi-Fi连网成功
+        /// </summary>
+        public virtual IResponseMessageBase OnEvent_WifiConnected(RequestMessageEvent_WifiConnected requestMessage)
+        {
+            return DefaultResponseMessage(requestMessage);
+        }
+
+        /// <summary>
+        /// Event事件类型请求之卡券核销
+        /// </summary>
+        public virtual IResponseMessageBase OnEvent_User_Consume_Card(RequestMessageEvent_User_Consume_Card requestMessage)
+        {
+            return DefaultResponseMessage(requestMessage);
+        }
+
+        /// <summary>
+        /// Event事件类型请求之从卡券进入公众号会话
+        /// </summary>
+        public virtual IResponseMessageBase OnEvent_User_Enter_Session_From_Card(RequestMessageEvent_User_Enter_Session_From_Card requestMessage)
+        {
+            return DefaultResponseMessage(requestMessage);
+        }
+
+        /// <summary>
+        /// Event事件类型请求之进入会员卡
+        /// </summary>
+        public virtual IResponseMessageBase OnEvent_User_View_Card(RequestMessageEvent_User_View_Card requestMessage)
+        {
+            return DefaultResponseMessage(requestMessage);
+        }
+
+        /// <summary>
+        /// Event事件类型请求之微小店订单付款通知
+        /// </summary>
+        public virtual IResponseMessageBase OnEvent_Merchant_Order(RequestMessageEvent_Merchant_Order requestMessage)
+        {
+            return DefaultResponseMessage(requestMessage);
+        }
+
+        /// <summary>
+        /// Event事件类型请求之接收会员信息事件通知
+        /// </summary>
+        public virtual IResponseMessageBase OnEvent_Submit_Membercard_User_Info(RequestMessageEvent_Submit_Membercard_User_Info requestMessage)
+        {
+            return DefaultResponseMessage(requestMessage);
+        }
+
+        /// <summary>
+        /// Event事件类型请求之摇一摇事件通知
+        /// </summary>
+        public virtual IResponseMessageBase OnEvent_ShakearoundUserShake(RequestMessageEvent_ShakearoundUserShake requestMessage)
+        {
+            return DefaultResponseMessage(requestMessage);
+        }
+
         #endregion
 
         #endregion

@@ -1,4 +1,17 @@
-﻿using System;
+﻿/*----------------------------------------------------------------
+    Copyright (C) 2015 Senparc
+    
+    文件名：EntityHelper.cs
+    文件功能描述：实体与xml相互转换
+    
+    
+    创建标识：Senparc - 20150313
+    
+    修改标识：Senparc - 20150313
+    修改描述：整理接口
+----------------------------------------------------------------*/
+
+using System;
 using System.CodeDom;
 using System.Collections.Generic;
 using System.Linq;
@@ -64,6 +77,10 @@ namespace Senparc.Weixin.QY.Helpers
 							//已设为只读
 							//prop.SetValue(entity, MsgTypeHelper.GetResponseMsgType(root.Element(propName).Value), null);
 							break;
+                        case "ThirdPartyInfo"://ThirdPartyInfo适用
+                            //已设为只读
+                            //prop.SetValue(entity, MsgTypeHelper.GetResponseMsgType(root.Element(propName).Value), null);
+                            break;
 						case "Event":
 							//已设为只读
 							//prop.SetValue(entity, EventHelper.GetEventType(root.Element(propName).Value), null);
@@ -137,6 +154,11 @@ namespace Senparc.Weixin.QY.Helpers
                             SendPicsInfo sendPicsInfo = new SendPicsInfo();
                             FillEntityWithXml(sendPicsInfo, new XDocument(root.Element(propName)));
                             prop.SetValue(entity, sendPicsInfo, null);
+                            break;
+                        case "BatchJobInfo"://异步任务完成事件推送BatchJob
+                            BatchJobInfo batchJobInfo = new BatchJobInfo();
+                            FillEntityWithXml(batchJobInfo, new XDocument(root.Element(propName)));
+                            prop.SetValue(entity, batchJobInfo, null);
                             break;
 						default:
 							prop.SetValue(entity, root.Element(propName).Value, null);
@@ -240,8 +262,8 @@ namespace Senparc.Weixin.QY.Helpers
 					switch (prop.PropertyType.Name)
 					{
 						case "String":
-							root.Add(new XElement(propName,
-												  new XCData(prop.GetValue(entity, null) as string ?? "")));
+                                root.Add(new XElement(propName,
+                                                 new XCData(prop.GetValue(entity, null) as string ?? "")));
 							break;
 						case "DateTime":
 							root.Add(new XElement(propName, DateTimeHelper.GetWeixinDateTime((DateTime)prop.GetValue(entity, null))));

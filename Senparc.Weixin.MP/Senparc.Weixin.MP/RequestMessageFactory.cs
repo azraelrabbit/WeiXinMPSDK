@@ -1,4 +1,20 @@
-﻿using System;
+﻿/*----------------------------------------------------------------
+    Copyright (C) 2015 Senparc
+  
+    文件名：RequestMessageFactory.cs
+    文件功能描述：获取XDocument转换后的IRequestMessageBase实例
+    
+    
+    创建标识：Senparc - 20150211
+    
+    修改标识：Senparc - 20150303
+    修改描述：整理接口
+    
+    修改标识：Senparc - 20150327
+    修改描述：添加小视频类型
+----------------------------------------------------------------*/
+
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -60,6 +76,9 @@ namespace Senparc.Weixin.MP
                     case RequestMsgType.Link:
                         requestMessage = new RequestMessageLink();
                         break;
+                    case RequestMsgType.ShortVideo:
+                        requestMessage = new RequestMessageShortVideo();
+                        break;
                     case RequestMsgType.Event:
                         //判断Event类型
                         switch (doc.Root.Element("Event").Value.ToUpper())
@@ -120,6 +139,39 @@ namespace Senparc.Weixin.MP
                                 break;
                             case "USER_DEL_CARD"://删除卡券
                                 requestMessage = new RequestMessageEvent_User_Del_Card();
+                                break;
+                            case "KF_CREATE_SESSION"://多客服接入会话
+                                requestMessage = new RequestMessageEvent_Kf_Create_Session();
+                                break;
+                            case "KF_CLOSE_SESSION"://多客服关闭会话
+                                requestMessage = new RequestMessageEvent_Kf_Close_Session();
+                                break;
+                            case "KF_SWITCH_SESSION"://多客服转接会话
+                                requestMessage = new RequestMessageEvent_Kf_Switch_Session();
+                                break;
+                            case "POI_CHECK_NOTIFY"://审核结果事件推送
+                                requestMessage = new RequestMessageEvent_Poi_Check_Notify();
+                                break;
+                            case "WIFICONNECTED"://Wi-Fi连网成功事件
+                                requestMessage = new RequestMessageEvent_WifiConnected();
+                                break;
+                            case "USER_CONSUME_CARD"://卡券核销
+                                requestMessage = new RequestMessageEvent_User_Consume_Card();
+                                break;
+                            case "USER_ENTER_SESSION_FROM_CARD"://从卡券进入公众号会话
+                                requestMessage = new RequestMessageEvent_User_Enter_Session_From_Card();
+                                break;
+                            case "USER_VIEW_CARD"://进入会员卡
+                                requestMessage = new RequestMessageEvent_User_View_Card();
+                                break;
+                            case "MERCHANT_ORDER"://微小店订单付款通知
+                                requestMessage = new RequestMessageEvent_Merchant_Order();
+                                break;
+                            case "SUBMIT_MEMBERCARD_USER_INFO"://接收会员信息事件通知
+                                requestMessage = new RequestMessageEvent_Submit_Membercard_User_Info();
+                                break;
+                            case "SHAKEAROUNDUSERSHAKE"://摇一摇事件通知
+                                requestMessage = new RequestMessageEvent_ShakearoundUserShake();
                                 break;
                             default://其他意外类型（也可以选择抛出异常）
                                 requestMessage = new RequestMessageEventBase();

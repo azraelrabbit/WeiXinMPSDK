@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Senparc.Weixin.Exceptions;
+using Senparc.Weixin.MP.AdvancedAPIs.Media;
 using Senparc.Weixin.MP.Entities;
 using Senparc.Weixin.HttpUtility;
 
@@ -18,13 +19,13 @@ namespace Senparc.Weixin.MP.Test.HttpUtility
             try
             {
                 //这里因为参数错误，系统会返回错误信息
-                UploadMediaFileResult resultFail = Post.PostGetJson<UploadMediaFileResult>(url, cookieContainer: null, formData: null, encoding: null);
+                UploadTemporaryMediaResult resultFail = Post.PostGetJson<UploadTemporaryMediaResult>(url, cookieContainer: null, formData: null, encoding: null);
                 Assert.Fail();//上一步就应该已经抛出异常
             }
             catch (ErrorJsonResultException ex)
             {
                 //实际返回的信息（错误信息）
-                Assert.AreEqual(ex.JsonResult.errcode, ReturnCode.验证失败);
+                Assert.AreEqual(ex.JsonResult.errcode, ReturnCode.获取access_token时AppSecret错误或者access_token无效);
             }
         }
 
@@ -45,6 +46,12 @@ namespace Senparc.Weixin.MP.Test.HttpUtility
             {
                 Assert.Fail();
             }
+        }
+
+        [TestMethod]
+        public void DownLoadTest()
+        {
+
         }
     }
 }

@@ -1,7 +1,12 @@
 ﻿using System;
 using System.Diagnostics;
+using System.IO;
+using System.Linq;
+using System.Xml.Linq;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Senparc.Weixin.Exceptions;
+using Senparc.Weixin.MP.AdvancedAPIs;
+using Senparc.Weixin.MP.AdvancedAPIs.User;
 using Senparc.Weixin.MP.CommonAPIs;
 using Senparc.Weixin.MP.Entities;
 
@@ -11,8 +16,44 @@ namespace Senparc.Weixin.MP.Test.CommonAPIs
     //[TestClass]
     public partial class CommonApiTest
     {
-        protected string _appId = "wxd838c2d5a1bc5801"; //换成你的信息
-        protected string _appSecret = ""; //换成你的信息
+        private dynamic _appConfig;
+        protected dynamic AppConfig
+        {
+            get
+            {
+                if (_appConfig == null)
+                {
+                    if (File.Exists("../../test.config"))
+                    {
+                        var doc = XDocument.Load("../../test.config");
+                        _appConfig = new
+                        {
+                            AppId = doc.Root.Element("AppId").Value,
+                            Secret = doc.Root.Element("Secret").Value
+                        };
+                    }
+                    else
+                    {
+                        _appConfig = new
+                        {
+                            AppId = "YourAppId", //换成你的信息
+                            Secret = "YourSecret"//换成你的信息
+                        };
+                    }
+                }
+                return _appConfig;
+            }
+        }
+
+        protected string _appId
+        {
+            get { return AppConfig.AppId; }
+        }
+
+        protected string _appSecret
+        {
+            get { return AppConfig.Secret; }
+        }
 
 
         /* 由于获取accessToken有次数限制，为了节约请求，
@@ -22,6 +63,22 @@ namespace Senparc.Weixin.MP.Test.CommonAPIs
         private string _access_token = null;
 
         protected string _testOpenId = "oIb08txj1En8hGXzHRvAjf-3X9Oc";//换成实际关注者的OpenId
+
+        /// <summary>
+        /// 自动获取Openid
+        /// </summary>
+        /// <param name="getNew">是否从服务器上强制获取一个</param>
+        /// <returns></returns>
+        protected string getTestOpenId(bool getNew)
+        {
+            if (getNew || string.IsNullOrEmpty(_testOpenId))
+            {
+                var accessToken = AccessTokenContainer.GetToken(_appId);
+                var openIdResult = UserApi.Get(accessToken, null);
+                _testOpenId = openIdResult.data.openid.First();
+            }
+            return _testOpenId;
+        }
 
         public CommonApiTest()
         {

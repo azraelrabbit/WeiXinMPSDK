@@ -1,5 +1,40 @@
-﻿using System;
+﻿/*----------------------------------------------------------------
+    Copyright (C) 2015 Senparc
+  
+    文件名：Enums.cs
+    文件功能描述：枚举类型
+    
+    
+    创建标识：Senparc - 20150211
+    
+    修改标识：Senparc - 20150303
+    修改描述：整理接口
+
+    修改标识：Senparc - 20150306
+    修改描述：添加多客服事件
+
+    修改标识：Senparc - 20150313
+    修改描述：添加语言类型
+
+    修改标识：Senparc - 20150323
+    修改描述：卡券新增会议门票类型
+
+    修改标识：Senparc - 20150327
+    修改描述：接收消息类型添加小视频类型
+
+    修改标识：马鑫 - 20150331
+    修改描述：修改返回错误码
+
+    修改标识：Senparc - 20150331
+    修改描述：应用授权作用域移至此处
+
+    修改标识：Senparc - 20150512
+    修改描述：添加摇一摇周边【关联操作标志位】、【新增操作标志位】枚举类型
+----------------------------------------------------------------*/
+
+using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using System.Text;
 
@@ -16,6 +51,7 @@ namespace Senparc.Weixin.MP
         Voice, //语音
         Video, //视频
         Link, //连接信息
+        ShortVideo,//小视频
         Event, //事件推送
     }
 
@@ -120,6 +156,60 @@ namespace Senparc.Weixin.MP
         /// </summary>
         user_del_card,
 
+        /// <summary>
+        /// 多客服接入会话
+        /// </summary>
+        kf_create_session,
+
+        /// <summary>
+        /// 多客服关闭会话
+        /// </summary>
+        kf_close_session,
+
+        /// <summary>
+        /// 多客服转接会话
+        /// </summary>
+        kf_switch_session,
+
+        /// <summary>
+        /// 审核结果事件推送
+        /// </summary>
+        poi_check_notify,
+
+        /// <summary>
+        /// Wi-Fi连网成功
+        /// </summary>
+        WifiConnected,
+
+        /// <summary>
+        /// 卡券核销
+        /// </summary>
+        user_consume_card,
+
+        /// <summary>
+        /// 进入会员卡
+        /// </summary>
+        user_view_card,
+
+        /// <summary>
+        /// 从卡券进入公众号会话
+        /// </summary>
+        user_enter_session_from_card,
+
+        /// <summary>
+        /// 微小店订单付款通知
+        /// </summary>
+        merchant_order,
+
+        /// <summary>
+        /// 接收会员信息事件通知
+        /// </summary>
+        submit_membercard_user_info,
+
+        /// <summary>
+        /// 摇一摇事件通知
+        /// </summary>
+        ShakearoundUserShake,
     }
 
 
@@ -128,14 +218,29 @@ namespace Senparc.Weixin.MP
     /// </summary>
     public enum ResponseMsgType
     {
-        Text,
-        News,
-        Music,
-        Image,
-        Voice,
-        Video,
+        [Description("文本")]
+        Text = 0,
+        [Description("单图文")]
+        News = 1,
+        [Description("音乐")]
+        Music = 2,
+        [Description("图片")]
+        Image = 3,
+        [Description("语音")]
+        Voice = 4,
+        [Description("视频")]
+        Video = 5,
+        [Description("多客服")]
         Transfer_Customer_Service,
         //transfer_customer_service
+
+        //以下为延伸类型，微信官方并未提供具体的回复类型
+        [Description("多图文")]
+        MultipleNews = 106,
+        [Description("位置")]
+        LocationMessage = 107,//
+        [Description("无回复")]
+        NoResponse = 110,
     }
 
     /// <summary>
@@ -249,7 +354,11 @@ namespace Senparc.Weixin.MP
         /// <summary>
         /// 视频
         /// </summary>
-        video = 4
+        video = 4,
+        /// <summary>
+        /// 卡券
+        /// </summary>
+        wxcard = 5
     }
     /// <summary>
     /// 卡券类型
@@ -296,6 +405,10 @@ namespace Senparc.Weixin.MP
         /// 红包
         /// </summary>
         LUCKY_MONEY = 9,
+        /// <summary>
+        /// 会议门票
+        /// </summary>
+        MEETING_TICKET=10,
     }
     /// <summary>
     /// 卡券code码展示类型
@@ -344,5 +457,177 @@ namespace Senparc.Weixin.MP
         /// 车辆信息
         /// </summary>
         URL_NAME_TYPE_VEHICLE_INFORMATION = 5,
+    }
+
+    public enum MemberCard_CustomField_NameType
+    {
+        /// <summary>
+        /// 等级
+        /// </summary>
+        FIELD_NAME_TYPE_LEVEL = 0,
+        /// <summary>
+        /// 优惠券
+        /// </summary>
+        FIELD_NAME_TYPE_COUPON = 1,
+        /// <summary>
+        /// 印花
+        /// </summary>
+        FIELD_NAME_TYPE_STAMP = 2,
+        /// <summary>
+        /// 折扣
+        /// </summary>
+        FIELD_NAME_TYPE_DISCOUNT = 3,
+        /// <summary>
+        /// 成就
+        /// </summary>
+        FIELD_NAME_TYPE_ACHIEVEMEN = 4,
+        /// <summary>
+        /// 里程
+        /// </summary>
+        FIELD_NAME_TYPE_MILEAGE = 5,
+    }
+
+    /// <summary>
+    /// 应用授权作用域
+    /// </summary>
+    public enum OAuthScope
+    {
+        /// <summary>
+        /// 不弹出授权页面，直接跳转，只能获取用户openid
+        /// </summary>
+        snsapi_base,
+        /// <summary>
+        /// 弹出授权页面，可通过openid拿到昵称、性别、所在地。并且，即使在未关注的情况下，只要用户授权，也能获取其信息
+        /// </summary>
+        snsapi_userinfo
+    }
+
+    /// <summary>
+    /// 关联操作标志位， 0为解除关联关系，1为建立关联关系
+    /// </summary>
+    public enum ShakeAroundBindType
+    {
+        解除关联关系 = 0,
+        建立关联关系 = 1
+    }
+
+    /// <summary>
+    /// 新增操作标志位， 0为覆盖，1为新增
+    /// </summary>
+    public enum ShakeAroundAppendType
+    {
+        覆盖 = 0,
+        新增 = 1
+    }
+
+    /// <summary>
+    /// 卡券使用时间的类型
+    /// </summary>
+    public enum Card_DateInfo_Type
+    {
+        /// <summary>
+        /// 固定日期区间
+        /// </summary>
+        DATE_TYPE_FIX_TIME_RANGE = 0,
+        /// <summary>
+        /// 固定时长（自领取后按天算）
+        /// </summary>
+        DATE_TYPE_FIX_TERM = 1,
+        /// <summary>
+        /// 永久有效
+        /// </summary>
+        DATE_TYPE_PERMANENT = 2
+    }
+
+    /// <summary>
+    /// 自动回复规则类型
+    /// </summary>
+    public enum AutoReplyType
+    {
+        /// <summary>
+        /// 文本
+        /// </summary>
+        text = 0,
+        /// <summary>
+        /// 图片
+        /// </summary>
+        img = 1,
+        /// <summary>
+        /// 语音
+        /// </summary>
+        voice = 2,
+        /// <summary>
+        /// 视频
+        /// </summary>
+        video = 3,
+        /// <summary>
+        /// 图文消息
+        /// </summary>
+        news = 4,
+    }
+
+    /// <summary>
+    /// 自动回复模式
+    /// </summary>
+    public enum AutoReplyMode
+    {
+        /// <summary>
+        /// 全部回复
+        /// </summary>
+        reply_all = 0,
+        /// <summary>
+        /// 随机回复其中一条
+        /// </summary>
+        random_one = 1,
+    }
+
+    /// <summary>
+    /// 自动回复匹配模式
+    /// </summary>
+    public enum AutoReplyMatchMode
+    {
+        /// <summary>
+        /// 消息中含有该关键词即可
+        /// </summary>
+        contain = 0,
+        /// <summary>
+        /// 消息内容必须和关键词严格相同
+        /// </summary>
+        equal = 1,
+    }
+
+    /// <summary>
+    /// 卡券创建货架 投放页面的场景值
+    /// </summary>
+    public enum CardShelfCreate_Scene
+    {
+        /// <summary>
+        /// 附近
+        /// </summary>
+        SCENE_NEAR_BY = 0,
+        /// <summary>
+        /// 自定义菜单
+        /// </summary>
+        SCENE_MENU = 1,
+        /// <summary>
+        /// 二维码
+        /// </summary>
+        SCENE_QRCODE = 2,
+        /// <summary>
+        /// 公众号文章
+        /// </summary>
+        SCENE_ARTICLE = 3,
+        /// <summary>
+        /// h5页面
+        /// </summary>
+        SCENE_H5 = 4,
+        /// <summary>
+        /// 自动回复
+        /// </summary>
+        SCENE_IVR = 5,
+        /// <summary>
+        /// 卡券自定义cell
+        /// </summary>
+        SCENE_CARD_CUSTOM_CELL = 6
     }
 }
